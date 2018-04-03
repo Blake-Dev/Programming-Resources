@@ -78,11 +78,11 @@ mysite/
 Here is a breakdown of these files and folders:
 * The outer **<project-name>/** is a container for the project. This name doesn't matter to Django, so feel free to name it to whatever you'd like. Or keep it the same. Up to you.
 * **manage.py** "A command-line utility that lets you interact with this Django project in various ways."
-* The inner **<project-name>** is the actual Python package for your project. This name is important and will be used to import anything involving it (e.g. **mysite.urls**).
-* **mysite/__init__.py** is an empty file that tells Python this directory should be treated as a Python package.
-* **mysite/settings.py** is the settings/configuration for the current Django project.
-* **mysite/urls.py** is where the URL declarations for the Django project are stored. "A 'table of contents' of your Django-powered site.'"
-* **mysite/wsgi.py** is the "entry-point for WSGI-compatible web servers to serve your project."
+* The inner **<project-name>** is the actual Python package for your project. This name is important and will be used to import anything involving it (e.g. **<app-name>.urls**).
+* **<app-name>/__init__.py** is an empty file that tells Python this directory should be treated as a Python package.
+* **<app-name>/settings.py** is the settings/configuration for the current Django project.
+* **<app-name>/urls.py** is where the URL declarations for the Django project are stored. "A 'table of contents' of your Django-powered site.'"
+* **<app-name>/wsgi.py** is the "entry-point for WSGI-compatible web servers to serve your project."
 
 ---
 
@@ -212,7 +212,7 @@ class Choice(models.Model):
 To ensure this model is now included in our project, lets add it to `INSTALLED_APPS`:
 ```
 INSTALLED_APPS = [
-    '<app-name>.apps.<***AppConfig**>',
+    '<app-name>.apps.<\***AppConfig**>',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
