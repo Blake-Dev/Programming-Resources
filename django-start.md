@@ -212,7 +212,7 @@ class Choice(models.Model):
 To ensure this model is now included in our project, lets add it to `INSTALLED_APPS`:
 ```
 INSTALLED_APPS = [
-    '<app-name>.apps.<\***AppConfig**>',
+    '<app-name>.apps.<* **AppConfig**>',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
