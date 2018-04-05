@@ -158,7 +158,7 @@ To verify everything is still working as expected, start up the server:
 
 ---
 
-# Using a Database
+### Using a Database
 To store data of any kind, we need a database. For this tutorial, we will be using SQLite3.
 
 ---
@@ -173,7 +173,7 @@ Just to drill it in your head, the `migrate` command only runs migrations for ap
 
 ---
 
-# Creating Models
+### Creating Models
 Models define your database layout and include additional metadata.
 
 Django Docs on migrations:
