@@ -276,3 +276,72 @@ from .models import Question
 
 admin.site.register(Question)
 ```
+
+### Views
+A "view" is a public interface the user interacts with.
+It is a "type" of Web page in the application that generally servers a specific function and has a specific template.
+
+Here are some examples the Django Documentation provides of what a view might be:
+
+* Blog homepage – displays the latest few entries.
+* Entry “detail” page – permalink page for a single entry.
+* Year-based archive page – displays all months with entries in the given year.
+* Month-based archive page – displays all days with entries in the given month.
+* Day-based archive page – displays all entries in the given day.
+* Comment action – handles posting comments to a given entry.
+* In our poll application, we’ll have the following four views:
+
+* Question “index” page – displays the latest few questions.
+* Question “detail” page – displays a question text, with no results but with a form to vote.
+* Question “results” page – displays results for a particular question.
+* Vote action – handles voting for a particular choice in a particular question.
+
+---
+
+A web page or any other content is delivered by a view. Each view is view is created either by using a function or method (this is the case if it's a class based view).
+
+The view is chosen by matching it with exactly with the corresponding URL.
+
+Django uses elegant URL patterns. Here's an example of what one might look like:
+`/newsarchive/<year>/<month>/`
+To get from a URL to a view, Django uses what are known as *URLconfs*.
+
+##### More Views
+Below are some examples the Django Documentation uses for simple views:
+`<app-name>/views.py`
+```
+def detail(request, question_id):
+    return HttpResponse("You're looking at question %s." % question_id)
+
+def results(request, question_id):
+    response = "You're looking at the results of question %s."
+    return HttpResponse(response % question_id)
+
+def vote(request, question_id):
+    return HttpResponse("You're voting on question %s." % question_id)
+```
+
+---
+
+`<app-name>/urls.py`
+```
+from django.urls import path
+
+from . import views
+
+urlpatterns = [
+    # ex: /polls/
+    path('', views.index, name='index'),
+    # ex: /polls/5/
+    path('<int:question_id>/', views.detail, name='detail'),
+    # ex: /polls/5/results/
+    path('<int:question_id>/results/', views.results, name='results'),
+    # ex: /polls/5/vote/
+    path('<int:question_id>/vote/', views.vote, name='vote'),
+]
+```
+Once Django matches the correct URL, it begins to pick it apart.
+`/<int:question_id>/` captures the int passed in and stores it in the name `question_id`. That variable name is used in the corresponding view, `detail`.
+
+`:question_id>` defines the name that will be used to identify the matched pattern.
+`<int:` is a converter that determines what patterns should match this part of the URL path.
