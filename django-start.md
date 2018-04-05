@@ -345,3 +345,211 @@ Once Django matches the correct URL, it begins to pick it apart.
 
 `:question_id>` defines the name that will be used to identify the matched pattern.
 `<int:` is a converter that determines what patterns should match this part of the URL path.
+
+---
+A view needs a minimum of one of two things:
+1) An HttpResponse object containing the content for the requested page
+2) An exception like Http404
+
+Besides returning one of those, your view can do whatever it likes.
+
+---
+
+### Templates
+You don't want your data to be hard coded into your site - things should be handled dynamically. There'll be cases where you're not sure what needs to be displayed ahead of time, and templates can help with that.
+
+To get started, first create a directory called `templates` in your `<app-name>` directory. This is where Django looks for templates.
+
+For the curious, everything regarding the templates is handled in `settings.py`. Inside that file, `TEMPLATES` describes how Django will load and render templates.
+"The default settings file configures a DjangoTemplates backend whose APP_DIRS option is set to True. By convention DjangoTemplates looks for a “templates” subdirectory in each of the INSTALLED_APPS."
+
+Inside of the `templates` directory you just created, create one more directory labeled `<app-name>`.
+Inside of this new `<app-name>` directory, create a file called `index.html`.
+
+Insert the following code into `index.html`:
+```
+{% if latest_question_list %}
+    <ul>
+    {% for question in latest_question_list %}
+        <li><a href="/polls/{{ question.id }}/">{{ question.question_text }}</a></li>
+    {% endfor %}
+    </ul>
+{% else %}
+    <p>No polls are available.</p>
+{% endif %}
+```
+
+Now go to the `views.py` and insert the following code:
+```
+from django.http import HttpResponse
+from django.template import loader
+
+from .models import Question
+
+def index(request):
+    latest_question_list = Question.objects.order_by('-pub_date')[:5]
+    template = loader.get_template('polls/index.html')
+    context = {
+        'latest_question_list': latest_question_list,
+    }
+    return HttpResponse(template.render(context, request))
+```
+Rather than returning a HttpResponse everytime, Django has a shortcut you can use called `render()`. The code below shows the same function, just using `render()` instead:
+```
+from django.shortcuts import render
+
+from .models import Question
+
+def index(request):
+    latest_question_list = Question.objects.order_by('-pub_date')[:5]
+    context = {'latest_question_list': latest_question_list}
+    return render(request, 'polls/index.html', context)
+```
+
+---
+
+### Rasing a 404 Error
+There will be times when the user attempts to access something that does not exist. 404 errors help handle those situations.
+The most common way to handle a situation like that is shown below:
+```
+from django.shortcuts import get_object_or_404, render
+
+from .models import Question
+# ...
+def detail(request, question_id):
+    question = get_object_or_404(Question, pk=question_id)
+    return render(request, 'polls/detail.html', {'question': question})
+```
+
+"The get_object_or_404() function takes a Django model as its first argument and an arbitrary number of keyword arguments, which it passes to the get() function of the model’s manager. It raises Http404 if the object doesn’t exist."
+
+---
+
+### More With Templates
+Now that we have a view defined for getting more details, let's get the templates worked out.
+```
+<h1>{{ question.question_text }}</h1>
+<ul>
+{% for choice in question.choice_set.all %}
+    <li>{{ choice.choice_text }}</li>
+{% endfor %}
+</ul>
+```
+The template system uses dot-lookup syntax to access variable attributes. Ex: `question.question_text`.
+The template system uses `{{ }}` to display variables. Ex: `{{ choice.choice_text }}`.
+The template system uses `{% %}` for method calling. Ex: `{% for %}`.
+
+---
+
+### Removing Hardcoded URLs in Templates
+To make things easier to read and more dynamic, let's remove the hardcoded URLs in our templates.
+
+In `<app-name>/index.html` template, change the code from:
+```
+<li><a href="/polls/{{ question.id }}/">{{ question.question_text }}</a></li>
+```
+to:
+```
+<li><a href="{% url 'detail' question.id %}">{{ question.question_text }}</a></li>
+```
+
+---
+
+### Namespacing URL Names
+In a real Django project, you might have several apps. Each of the apps might have similar view names such as `detail`, `index`, and other common ones. Namespaces are a way to keep everything organized.
+To get that functionality, you just add namespaces to your URLconf. This would be placed in your `<app-name>/urls.py` file.
+
+`<app-name>/urls.py`
+```
+from django.urls import path
+
+from . import views
+
+app_name = 'polls'
+urlpatterns = [
+    path('', views.index, name='index'),
+    path('<int:question_id>/', views.detail, name='detail'),
+    path('<int:question_id>/results/', views.results, name='results'),
+    path('<int:question_id>/vote/', views.vote, name='vote'),
+]
+```
+Finally, go to `<app-name>/templates/<app-name>/index.html` and update the code from:
+```
+<li><a href="{% url 'detail' question.id %}">{{ question.question_text }}</a></li>
+``
+to:
+```
+<li><a href="{% url 'polls:detail' question.id %}">{{ question.question_text }}</a></li>
+```
+
+---
+
+### Writing Forms!
+Updating and inserting information is essential to many web apps, so let's learn how to with Django!
+
+Update `<app-name>/detail.html` in `templates`:
+```
+<h1>{{ question.question_text }}</h1>
+
+{% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
+
+<form action="{% url 'polls:vote' question.id %}" method="post">
+{% csrf_token %}
+{% for choice in question.choice_set.all %}
+    <input type="radio" name="choice" id="choice{{ forloop.counter }}" value="{{ choice.id }}" />
+    <label for="choice{{ forloop.counter }}">{{ choice.choice_text }}</label><br />
+{% endfor %}
+<input type="submit" value="Vote" />
+</form>
+```
+We have a `vote` view to handle this form, but for now it's just a dummy form. Let's go ahead and update it handle this form:
+```
+from django.shortcuts import get_object_or_404, render
+from django.http import HttpResponseRedirect, HttpResponse
+from django.urls import reverse
+
+from .models import Choice, Question
+# ...
+def vote(request, question_id):
+    question = get_object_or_404(Question, pk=question_id)
+    try:
+        selected_choice = question.choice_set.get(pk=request.POST['choice'])
+    except (KeyError, Choice.DoesNotExist):
+        # Redisplay the question voting form.
+        return render(request, 'polls/detail.html', {
+            'question': question,
+            'error_message': "You didn't select a choice.",
+        })
+    else:
+        selected_choice.votes += 1
+        selected_choice.save()
+        # Always return an HttpResponseRedirect after successfully dealing
+        # with POST data. This prevents data from being posted twice if a
+        # user hits the Back button.
+        return HttpResponseRedirect(reverse('polls:results', args=(question.id,)))
+```
+
+In this example, after someone votes on a question successfully, they need to be redirected. We will send them to the results view.
+`<app-name>/views.py`
+```
+from django.shortcuts import get_object_or_404, render
+
+def results(request, question_id):
+    question = get_object_or_404(Question, pk=question_id)
+    return render(request, 'polls/results.html', {'question': question})
+```
+This view is nearly identical to the `detail()` view, the only difference being the template name.
+
+Now we will create a `<app-name>/results.html` template:
+`polls/templates/polls/results.html`
+```
+<h1>{{ question.question_text }}</h1>
+
+<ul>
+{% for choice in question.choice_set.all %}
+    <li>{{ choice.choice_text }} -- {{ choice.votes }} vote{{ choice.votes|pluralize }}</li>
+{% endfor %}
+</ul>
+
+<a href="{% url 'polls:detail' question.id %}">Vote again?</a>
+```
